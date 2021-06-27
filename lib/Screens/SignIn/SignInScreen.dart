@@ -1,22 +1,30 @@
 import 'package:farmx_auth/CommonWidgets/ExceptionAlertDialogue.dart';
 import 'package:farmx_auth/Screens/SignIn/EmailSignInScreen.dart';
 import 'package:farmx_auth/Screens/SignIn/PhoneSignInFormBloc.dart';
-import 'package:farmx_auth/Screens/SignIn/SignInBloc.dart';
+import 'package:farmx_auth/Screens/SignIn/SignInManager.dart';
 import 'package:farmx_auth/Services/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class SignInPageScreen extends StatelessWidget {
-  const SignInPageScreen({required this.bloc});
-  final SignInBloc bloc;
+  const SignInPageScreen({required this.manager, required this.isLoading});
+  final SignInManager manager;
+  final bool isLoading;
   static Widget create(BuildContext context) {
     final auth = Provider.of<AuthBase>(context, listen: false);
-    return Provider<SignInBloc>(
-      create: (_) => SignInBloc(auth: auth),
-      dispose: (_, bloc) => bloc.dispose(),
-      child: Consumer<SignInBloc>(
-        builder: (_, bloc, __) => SignInPageScreen(bloc: bloc),
+    return ChangeNotifierProvider<ValueNotifier<bool>>(
+      create: (_) => ValueNotifier<bool>(false),
+      child: Consumer<ValueNotifier<bool>>(
+        builder: (_, isLoading, __) => Provider<SignInManager>(
+          create: (_) => SignInManager(auth: auth, isLoading: isLoading),
+          child: Consumer<SignInManager>(
+            builder: (_, manager, __) => SignInPageScreen(
+              manager: manager,
+              isLoading: isLoading.value,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -35,7 +43,7 @@ class SignInPageScreen extends StatelessWidget {
 
   Future<void> _signInAnonymously(BuildContext context) async {
     try {
-      await bloc.signInAnonymously();
+      await manager.signInAnonymously();
     } on Exception catch (error) {
       _showSignInError(context, error);
     }
@@ -43,7 +51,7 @@ class SignInPageScreen extends StatelessWidget {
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
-      await bloc.signInWithGoogle();
+      await manager.signInWithGoogle();
     } on Exception catch (error) {
       _showSignInError(context, error);
     }
@@ -60,35 +68,26 @@ class SignInPageScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = Provider.of<SignInBloc>(
-      context,
-      listen: false,
-    );
     return Scaffold(
       appBar: AppBar(
         title: Text("FarmX"),
         centerTitle: true,
         backgroundColor: Colors.black,
-        elevation: 0,
+        elevation: 2.0,
       ),
-      body: StreamBuilder<bool>(
-          stream: bloc.isLoadingStream,
-          initialData: false,
-          builder: (context, snapshot) {
-            return _buildContent(context, snapshot.data);
-          }),
+      body: _buildContent(context),
       backgroundColor: Colors.grey[200],
     );
   }
 
-  Widget _buildContent(BuildContext context, bool? isLoading) {
+  Widget _buildContent(BuildContext context) {
     return Container(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           SizedBox(
             height: 50.0,
-            child: _buildHeader(isLoading!),
+            child: _buildHeader(),
           ),
           PhoneSignInFormBloc.create(context),
           // SignInWithPhone(),
@@ -127,7 +126,7 @@ class SignInPageScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(bool isLoading) {
+  Widget _buildHeader() {
     if (isLoading) {
       return Center(
         child: CircularProgressIndicator(),

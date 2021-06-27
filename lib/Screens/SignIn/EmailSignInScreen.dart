@@ -1,4 +1,4 @@
-import 'package:farmx_auth/Screens/SignIn/EmailSignInFormBlocBased.dart';
+import 'package:farmx_auth/Screens/SignIn/EmailSignInFormChangeNotifier.dart';
 import 'package:flutter/material.dart';
 
 class EmailSignInScreen extends StatelessWidget {
@@ -15,7 +15,7 @@ class EmailSignInScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Card(
-            child: EmailSignInFormBlocBased.create(context),
+            child: EmailSignInFormChangeNotifier.create(context),
           ),
         ),
       ),
